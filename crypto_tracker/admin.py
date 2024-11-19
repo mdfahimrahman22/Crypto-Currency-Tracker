@@ -12,13 +12,13 @@ class BTCPriceAdmin(admin.ModelAdmin):
     def get_local_timestamp(self, obj):
         return localtime(obj.timestamp).strftime('%b %d, %Y, %I:%M:%S %p')
 
-    get_local_timestamp.short_description = 'Local Timestamp'
+    get_local_timestamp.short_description = 'Timestamp'
 
 
 @admin.register(BTCTrackerConfig)
 class TrackerConfigAdmin(admin.ModelAdmin):
-    list_display = ['id', 'my_buying_price', 'buying_target',
-                    'selling_target', 'send_email_alert']
+    list_display = ['id', 'my_buying_price', 'profit_target',
+                    'buying_target', 'send_selling_alert', 'send_buying_alert']
     list_display_links = ('id',)  # Make 'id' the clickable link
-    list_editable = ['my_buying_price', 'buying_target',
-                     'selling_target', 'send_email_alert']
+    list_editable = ['my_buying_price', 'profit_target',
+                     'buying_target', 'send_selling_alert', 'send_buying_alert']

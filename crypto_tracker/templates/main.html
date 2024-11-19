@@ -1,14 +1,116 @@
-<!-- tracker/templates/main.html -->
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>BTC Tracker</title>
-</head>
-<body>
-    <h1>BTC Tracker Dashboard</h1>
-    <p><strong>Buying Price:</strong> ${{ buying_price }}</p>
-    <p><strong>Selling Price:</strong> ${{ selling_price }}</p>
-    <p><strong>Recommendation:</strong> {{ recommendation }}</p>
-    <p><strong>Last Updated:</strong> {{ timestamp }}</p>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        height: 100vh;
+      }
+      .container {
+        width: 800px;
+        padding: 20px;
+        margin-top: 100px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: left; /* Align text to the left */
+      }
+      .text-center {
+        text-align: center; /* Center the header only */
+        margin-bottom: 20px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      canvas {
+        margin-top: 20px;
+      }
+      .center{
+        margin: auto;
+        width: 50%;
+        padding-left: 50px;
+      }
+      
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="text-center">BTC Tracker Dashboard</h2>
+      <div class="center">
+        <p><strong>Buying Price:</strong> ${{ buying_price }}</p>
+        <p><strong>Selling Price:</strong> ${{ selling_price }}</p>
+        <p><strong>Recommendation:</strong> {{ recommendation }}</p>
+        <p><strong>Last Updated:</strong> {{ timestamp }}</p>
+      </div>
+
+      <h3 class="text-center">Graph: Buying and Selling Prices Over Time</h3>
+      <canvas id="btcChart" width="800" height="400"></canvas>
+    </div>
+
+    <script>
+      const labels = {{ timestamps|safe }};  // Use Django's safe filter to pass JSON safely
+      const sellingPrices = {{ selling_prices|safe }};
+      const buyingPrices = {{ buying_prices|safe }};
+
+      const data = {
+          labels: labels,
+          datasets: [
+              {
+                  label: 'Selling Price',
+                  data: sellingPrices,
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                  borderWidth: 2,
+              },
+              {
+                  label: 'Buying Price',
+                  data: buyingPrices,
+                  borderColor: 'rgba(255, 99, 132, 1)',
+                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                  borderWidth: 2,
+              },
+          ],
+      };
+
+      const config = {
+          type: 'line',
+          data: data,
+          options: {
+              responsive: true,
+              plugins: {
+                  legend: {
+                      position: 'top',
+                  },
+              },
+              scales: {
+                  x: {
+                      title: {
+                          display: true,
+                          text: 'Timestamp',
+                      },
+                  },
+                  y: {
+                      title: {
+                          display: true,
+                          text: 'Price (CAD)',
+                      },
+                  },
+              },
+          },
+      };
+
+      const btcChart = new Chart(
+          document.getElementById('btcChart'),
+          config
+      );
+    </script>
+  </body>
 </html>

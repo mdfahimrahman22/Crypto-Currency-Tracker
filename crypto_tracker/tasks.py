@@ -48,9 +48,9 @@ def track_prices():
             continue
 
         my_buying_price = tracker_config.my_buying_price
-        buying_target = tracker_config.buying_target * \
-            tracker_config.buying_target_threshold
-        selling_target = tracker_config.selling_target
+        selling_target = tracker_config.profit_target * \
+            tracker_config.selling_target_threshold
+        buying_target = tracker_config.buying_target
 
         quote_data = request_data('https://api.shakepay.com/quote')
 
@@ -68,12 +68,20 @@ def track_prices():
                 recommendation = None
                 new_buying_price = round(new_buying_price, 2)
                 new_selling_price = round(new_selling_price, 2)
-                if my_buying_price + buying_target <= new_selling_price:
+                if my_buying_price + selling_target <= new_selling_price:
                     recommendation = "Sell"
-                elif new_buying_price <= selling_target:
+                    if tracker_config.send_selling_alert:
+                        send_email_if_not_recent(
+                            tracker_config, recommendation, new_buying_price, new_selling_price)
+
+                elif new_buying_price <= buying_target:
                     recommendation = "Buy"
+                    if tracker_config.send_buying_alert:
+                        send_email_if_not_recent(
+                            tracker_config, recommendation, new_buying_price, new_selling_price)
+
                 else:
-                    recommendation = f"Hold(-${round((my_buying_price+buying_target) - new_selling_price,2)})"
+                    recommendation = f"Hold(-${round((my_buying_price+selling_target) - new_selling_price,2)})"
 
                 # Save data to the database
                 BTCPrice.objects.create(
@@ -82,12 +90,8 @@ def track_prices():
                     recommendation=recommendation
                 )
                 # Maintain the limit of 100 records
-                BTCPrice.maintain_limit(100)
+                BTCPrice.maintain_limit(1000)
 
-                # Send email if recommendation is "Buy" or "Sell"
-                if recommendation in ["Buy", "Sell"]:
-                    send_email_if_not_recent(
-                        tracker_config, recommendation, new_buying_price, new_selling_price)
 
             except Exception as e:
                 print('Error:', e)

@@ -4,15 +4,18 @@ from django.db import models
 class BTCTrackerConfig(models.Model):
     my_buying_price = models.FloatField(
         default=0.0, help_text="Your BTC buying price.")
-    buying_target_threshold = models.FloatField(
-        default=1250.61, help_text="The difference of selling price and your buying price")
-    buying_target = models.FloatField(
+    selling_target_threshold = models.FloatField(
+        default=1250.61, help_text="The difference of current selling price and your buying price")
+    profit_target = models.FloatField(
         default=0.0, help_text="The target profit(in CAD) for selling BTC.")
-    selling_target = models.FloatField(
+    buying_target = models.FloatField(
         default=0.0, help_text="The price below which to buy BTC.")
     fetch_data_duration = models.IntegerField(
         default=15, help_text="Sleep time after API call in second")
-    send_email_alert = models.BooleanField(default=True)
+    send_selling_alert = models.BooleanField(default=True)
+    send_buying_alert = models.BooleanField(default=True)
+    alert_delay = models.IntegerField(
+        null=True, blank=True, help_text="The delay of sending email in minutes")
     last_email_time = models.DateTimeField(
         null=True, blank=True, help_text="Last time an email was sent.")
 
