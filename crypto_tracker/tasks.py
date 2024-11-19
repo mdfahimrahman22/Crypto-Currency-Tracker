@@ -92,7 +92,6 @@ def track_prices():
                 # Maintain the limit of 100 records
                 BTCPrice.maintain_limit(1000)
 
-
             except Exception as e:
                 print('Error:', e)
 
@@ -105,7 +104,7 @@ def send_email_if_not_recent(tracker_config, recommendation, buying_price, selli
     """
     now_time = now()
 
-    if tracker_config.last_email_time is None or (now_time - tracker_config.last_email_time > timedelta(minutes=30)):
+    if tracker_config.last_email_time is None or (now_time - tracker_config.last_email_time > timedelta(minutes=tracker_config.alert_delay)):
         print('Sending email...')
         # Update the last email sent time
         subject = f"BTC Recommendation: {recommendation}"
