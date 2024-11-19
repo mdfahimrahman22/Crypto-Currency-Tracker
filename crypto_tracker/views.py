@@ -1,8 +1,5 @@
 from django.shortcuts import render
 from .models import BTCPrice
-import matplotlib.pyplot as plt
-import io
-import base64
 import json
 
 def main_view(request):
