@@ -1,0 +1,19 @@
+version: '3.6'
+
+services:
+  crypto-currency-tracker-django:
+    container_name: crypto_tracker_django
+    build:
+      context: .
+    restart: always
+    command: bash -c "python manage.py runserver 0.0.0.0:8093 & python manage.py start_tracker"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    ports:
+      - "8093:8093"
+
+volumes:
+  cache:
+    driver: local
