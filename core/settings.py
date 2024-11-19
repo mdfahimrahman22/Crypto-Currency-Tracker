@@ -35,7 +35,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "http://13.233.50.85:8093"
+    "http://13.233.50.85:8093",
     "https://crypto-tracker.pioneeralpha.com"
 ]
 
