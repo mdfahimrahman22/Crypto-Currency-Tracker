@@ -13,7 +13,3 @@ services:
       - .env
     ports:
       - "8093:8093"
-
-volumes:
-  cache:
-    driver: local
