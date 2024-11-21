@@ -1,17 +1,29 @@
-from django.shortcuts import render
-from .models import BTCPrice
+from django.shortcuts import render, HttpResponse
+from .models import BTCPrice, BTCTrackerConfig
 import json
+from time import sleep
+
 
 def main_view(request):
+    tracker_config = BTCTrackerConfig.objects.first()
+    if not tracker_config:
+        HttpResponse(
+            'No Tracker Configuration found! Please add one in the admin panel.')
     # Fetch the latest BTCPrice record
     latest_price = BTCPrice.objects.order_by('-timestamp').first()
-    
-    prices = BTCPrice.objects.order_by('-timestamp')[:100][::-1]  # Reverse for chronological order
 
-    timestamps = [price.timestamp.strftime('%b %d, %I:%M:%S %p') for price in prices]
+    # Reverse for chronological order
+    prices = BTCPrice.objects.order_by(
+        '-timestamp')[:tracker_config.records_to_display_in_chart][::-1]
+
+    timestamps = [price.timestamp.strftime(
+        '%b %d, %I:%M:%S %p') for price in prices]
     selling_prices = [price.selling_price for price in prices]
     buying_prices = [price.buying_price for price in prices]
-    
+
+    # Calculate min buying price and max selling price
+    min_buying_price = min(buying_prices) if buying_prices else 'N/A'
+    max_selling_price = max(selling_prices) if selling_prices else 'N/A'
 
     # Prepare data for the response
     context = {
@@ -22,6 +34,8 @@ def main_view(request):
         'timestamps': json.dumps(timestamps),
         'selling_prices': json.dumps(selling_prices),
         'buying_prices': json.dumps(buying_prices),
+        'min_buying_price': min_buying_price,
+        'max_selling_price': max_selling_price,
     }
 
     return render(request, 'main.html', context)
