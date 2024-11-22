@@ -16,7 +16,7 @@ def main_view(request):
     # Reverse for chronological order
     prices = BTCPrice.objects.order_by(
         '-timestamp')[:tracker_config.records_to_display_in_chart][::-1]
-
+    
     timestamps = [localtime(price.timestamp).strftime(
         '%b %d, %I:%M:%S %p') for price in prices]
     selling_prices = [price.selling_price for price in prices]
@@ -32,7 +32,6 @@ def main_view(request):
         BTCPrice.objects.order_by('-timestamp').aggregate(max_price=Max('selling_price'))['max_price']
         or float('inf')  # Default to infinity if no records
     )
-    print(min_buying_price)
 
     # Prepare data for the response
     context = {
