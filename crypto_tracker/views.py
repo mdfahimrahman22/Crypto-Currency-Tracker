@@ -2,7 +2,7 @@ from django.shortcuts import render, HttpResponse
 from .models import BTCPrice, BTCTrackerConfig
 import json
 from time import sleep
-
+from django.db.models import Min,Max
 
 def main_view(request):
     tracker_config = BTCTrackerConfig.objects.first()
@@ -22,8 +22,16 @@ def main_view(request):
     buying_prices = [price.buying_price for price in prices]
 
     # Calculate min buying price and max selling price
-    min_buying_price = min(buying_prices) if buying_prices else 'N/A'
-    max_selling_price = max(selling_prices) if selling_prices else 'N/A'
+    
+    min_buying_price = (
+        BTCPrice.objects.order_by('-timestamp').aggregate(min_price=Min('buying_price'))['min_price']
+        or float('inf')  # Default to infinity if no records
+    )
+    max_selling_price = (
+        BTCPrice.objects.order_by('-timestamp').aggregate(max_price=Max('selling_price'))['max_price']
+        or float('inf')  # Default to infinity if no records
+    )
+    print(min_buying_price)
 
     # Prepare data for the response
     context = {
