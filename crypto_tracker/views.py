@@ -3,6 +3,7 @@ from .models import BTCPrice, BTCTrackerConfig
 import json
 from time import sleep
 from django.db.models import Min,Max
+from django.utils.timezone import localtime
 
 def main_view(request):
     tracker_config = BTCTrackerConfig.objects.first()
@@ -16,7 +17,7 @@ def main_view(request):
     prices = BTCPrice.objects.order_by(
         '-timestamp')[:tracker_config.records_to_display_in_chart][::-1]
 
-    timestamps = [price.timestamp.strftime(
+    timestamps = [localtime(price.timestamp).strftime(
         '%b %d, %I:%M:%S %p') for price in prices]
     selling_prices = [price.selling_price for price in prices]
     buying_prices = [price.buying_price for price in prices]
