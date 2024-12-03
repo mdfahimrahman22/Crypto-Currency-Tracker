@@ -50,4 +50,4 @@ def btc_view(request):
         'max_selling_price': max_selling_price,
     }
 
-    return render(request, 'main.html', context)
+    return render(request, 'btc_view.html', context)

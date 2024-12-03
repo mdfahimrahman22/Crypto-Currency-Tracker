@@ -46,4 +46,4 @@ def eth_view(request):
         'max_selling_price': max_selling_price,
     }
 
-    return render(request, 'main.html', context)
+    return render(request, 'eth_view.html', context)
