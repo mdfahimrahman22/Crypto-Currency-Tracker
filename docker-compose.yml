@@ -6,7 +6,7 @@ services:
     build:
       context: .
     restart: always
-    command: bash -c "python manage.py runserver 0.0.0.0:8093 & python manage.py start_tracker"
+    command: bash -c "python manage.py runserver 0.0.0.0:8093 & python manage.py start_btc_tracker & python manage.py start_eth_tracker"
     volumes:
       - .:/opt/webapp
     env_file:

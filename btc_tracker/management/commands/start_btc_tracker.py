@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
-from crypto_tracker.tasks import track_prices  # Import the function
+from btc_tracker.tasks import track_btc_prices 
 
 class Command(BaseCommand):
     help = "Start BTC Price Tracker"
 
     def handle(self, *args, **kwargs):
-        track_prices()
+        track_btc_prices()

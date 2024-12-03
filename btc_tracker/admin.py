@@ -1,7 +1,20 @@
 from django.contrib import admin
-from .models import BTCPrice, BTCTrackerConfig
+from .models import BTCPrice, BTCBuyingRecord, BTCTrackerSettings
 from django.utils.timezone import localtime
 from django.db.models import Min, Max
+
+@admin.action(description="Mark selected records as sold")
+def mark_as_sold(modeladmin, request, queryset):
+    queryset.update(sold=True)
+
+@admin.register(BTCTrackerSettings)
+class BTCTrackerSettingsAdmin(admin.ModelAdmin):
+    list_display = ['id', 'buying_target', 'fetch_data_duration',
+                    'send_selling_alert', 'send_buying_alert', 'records_to_display_in_chart']
+    list_display_links = ('id',)  # Make 'id' the clickable link
+    list_editable = ['buying_target', 'fetch_data_duration',
+                     'send_selling_alert', 'send_buying_alert', 'records_to_display_in_chart']
+    readonly_fields=['last_email_time']
 
 
 @admin.register(BTCPrice)
@@ -32,10 +45,13 @@ class BTCPriceAdmin(admin.ModelAdmin):
     max_selling_price.short_description = 'Max Selling Price'
 
 
-@admin.register(BTCTrackerConfig)
-class TrackerConfigAdmin(admin.ModelAdmin):
-    list_display = ['id', 'my_buying_rate', 'my_buying_amount', 'profit_target',
-                    'buying_target', 'send_selling_alert', 'send_buying_alert']
+@admin.register(BTCBuyingRecord)
+class BTCBuyingRecordAdmin(admin.ModelAdmin):
+    list_display = ['id', 'buying_rate',
+                    'buying_amount', 'profit_target', 'date', 'sold']
+    list_filter = ['sold']
     list_display_links = ('id',)  # Make 'id' the clickable link
-    list_editable = ['my_buying_amount', 'my_buying_rate', 'profit_target',
-                     'buying_target', 'send_selling_alert', 'send_buying_alert']
+    list_editable = ['buying_rate',
+                     'buying_amount', 'profit_target', 'sold']
+    list_per_page = 20
+    actions = [mark_as_sold]

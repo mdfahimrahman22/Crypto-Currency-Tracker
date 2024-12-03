@@ -7,7 +7,8 @@ from time import sleep
 import requests
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
-from crypto_tracker.models import BTCPrice, BTCTrackerConfig  # Import the model
+# Import the model
+from btc_tracker.models import BTCPrice, BTCBuyingRecord, BTCTrackerSettings
 
 
 def request_data(url):
@@ -39,23 +40,20 @@ def request_data(url):
             sleep(60)
 
 
-def track_prices():
+def track_btc_prices():
     while True:
         # Get the current configuration
-        tracker_config = BTCTrackerConfig.objects.first()
+        tracker_config = BTCTrackerSettings.objects.first()
         if not tracker_config:
             print("No Tracker Configuration found! Please add one in the admin panel.")
             sleep(60)  # Wait and retry
             continue
 
-        my_buying_amount = tracker_config.my_buying_amount
-        my_buying_rate = tracker_config.my_buying_rate
-        my_btc_amount = (1/my_buying_rate)*my_buying_amount
-
-        buying_target = tracker_config.buying_target
-        all_time_min_buying_price = BTCPrice.objects.aggregate(
-            min_price=Min('buying_price')
-        )['min_price'] or float('inf')  # Default to infinity if no records
+        btc_buying_records = BTCBuyingRecord.objects.filter(sold=False)
+        if not len(btc_buying_records):
+            print("No BTC buying records found! Please add one in the admin panel.")
+            sleep(60)  # Wait and retry
+            continue
 
         quote_data = request_data('https://api.shakepay.com/quote')
 
@@ -63,43 +61,63 @@ def track_prices():
             try:
                 for item in quote_data:
                     if item["symbol"] == "CAD_BTC":
-                        new_buying_price = 1 / item['rate']
-                        print(f'BTC Buying price: ${new_buying_price}')
+                        current_buying_price = 1 / item['rate']
+                        print(f'BTC Buying price: ${current_buying_price}')
 
                     if item["symbol"] == "BTC_CAD":
-                        new_selling_price = item['rate']
-                        print(f'BTC Selling price: ${new_selling_price}')
+                        current_selling_price = item['rate']
+                        print(f'BTC Selling price: ${current_selling_price}')
 
-                recommendation = None
-                new_buying_price = round(new_buying_price, 2)
-                new_selling_price = round(new_selling_price, 2)
+                recommendation = ""
+                current_buying_price = round(current_buying_price, 2)
+                current_selling_price = round(current_selling_price, 2)
+                total_profit = 0
+                total_target = 0
+                for buying_record in btc_buying_records:
+                    buying_amount = buying_record.buying_amount
+                    buying_rate = buying_record.buying_rate
+                    selling_value = (buying_amount/buying_rate) * \
+                        current_selling_price
 
-                current_profit = (
-                    my_btc_amount*new_selling_price)-my_buying_amount
-                if current_profit >= tracker_config.profit_target:
-                    recommendation = f"Sell (+${round(current_profit,2)})"
-                    if tracker_config.send_selling_alert:
-                        send_email_if_not_recent(
-                            tracker_config, recommendation, new_buying_price, new_selling_price)
-                elif new_buying_price <= buying_target:
-                    recommendation = "Buy"
-                    if tracker_config.send_buying_alert:
-                        send_email_if_not_recent(
-                            tracker_config, recommendation, new_buying_price, new_selling_price)
-                elif new_buying_price <= all_time_min_buying_price:
-                    recommendation = f"Buy (All-Time Low ${new_buying_price})"
-                    if tracker_config.send_buying_alert:
-                        send_email_if_not_recent(
-                            tracker_config, recommendation, new_buying_price, new_selling_price
-                        )
+                    current_profit = selling_value-buying_amount
+                    
+                    if current_profit >= buying_record.profit_target:
+                        recommendation += f"Sell (+${round(current_profit,2)} of ${buying_amount}),\n"
+
+                    total_profit += current_profit
+                    total_target += buying_record.profit_target
+
+                if total_profit >= total_target:
+                    recommendation += f"Sell (+${round(total_profit,2)} of all),\n"
                 else:
-                    recommendation = f"Hold (${round(current_profit,2)})"
+                    recommendation += f"Hold (${round(total_profit,2)}),\n"
+                    
+                if tracker_config.send_selling_alert and 'Sell' in recommendation:
+                    send_email_if_not_recent(
+                        tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price)
+
+                if current_buying_price <= tracker_config.buying_target:
+                    recommendation += "Buy,\n"
+                    if tracker_config.send_buying_alert:
+                        send_email_if_not_recent(
+                            tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price)
+
+                all_time_min_buying_price = BTCPrice.objects.aggregate(
+                    min_price=Min('buying_price')
+                )['min_price'] or float('inf')  # Default to infinity if no records
+
+                if current_buying_price <= all_time_min_buying_price:
+                    recommendation += f"Buy (All-Time Low ${current_buying_price}),\n"
+                    if tracker_config.send_buying_alert:
+                        send_email_if_not_recent(
+                            tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price
+                        )
 
                 # Save data to the database
                 BTCPrice.objects.create(
-                    buying_price=new_buying_price,
-                    selling_price=new_selling_price,
-                    recommendation=recommendation
+                    buying_price=current_buying_price,
+                    selling_price=current_selling_price,
+                    recommendation=recommendation.strip('\n,')
                 )
                 # Maintain the limit of 100 records
                 BTCPrice.maintain_limit(tracker_config.data_limit)
@@ -124,8 +142,8 @@ def send_email_if_not_recent(tracker_config, recommendation, buying_price, selli
             f"Dear User,\n\n"
             f"The system has a new recommendation for BTC:\n"
             f"Recommendation: {recommendation}\n"
-            f"Buying Price: ${buying_price:.2f}\n"
-            f"Selling Price: ${selling_price:.2f}\n\n"
+            f"Current Buying Price: ${buying_price:.2f}\n"
+            f"Current Selling Price: ${selling_price:.2f}\n\n"
             f"Please take the necessary action.\n\n"
             f"Best regards,\n"
             f"BTC Tracker System"

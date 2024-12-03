@@ -1,10 +1,8 @@
-# btc_tracker/urls.py
-
 from django.contrib import admin
-from django.urls import path
-from crypto_tracker.views import main_view  # Import the view
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', main_view, name='main'),  # Add the main view to the root URL
+    path('', include('btc_tracker.urls')),
+    path('', include('eth_tracker.urls')),
 ]

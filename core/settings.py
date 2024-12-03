@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'crypto_tracker'
+    'btc_tracker',
+    'eth_tracker'
 ]
 
 MIDDLEWARE = [
