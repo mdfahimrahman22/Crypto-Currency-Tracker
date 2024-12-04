@@ -90,7 +90,8 @@ def track_btc_prices():
                     total_target += buying_record.profit_target
 
                 if total_profit >= total_target:
-                    recommendation += f"Sell (+${round(total_profit,2)} of {total_buying_amount}),\n"
+                    if f"Sell (+${round(total_profit,2)} of {total_buying_amount})," not in recommendation:
+                        recommendation += f"Sell (+${round(total_profit,2)} of {total_buying_amount}),\n"
                 else:
                     recommendation += f"Hold (${round(total_profit,2)} of {total_buying_amount}),\n"
 
