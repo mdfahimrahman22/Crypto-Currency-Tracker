@@ -73,14 +73,16 @@ def track_eth_prices():
                 current_selling_price = round(current_selling_price, 2)
                 total_profit = 0
                 total_target = 0
+                total_buying_amount = 0
                 for buying_record in btc_buying_records:
                     buying_amount = buying_record.buying_amount
                     buying_rate = buying_record.buying_rate
                     selling_value = (buying_amount/buying_rate) * \
                         current_selling_price
+                    total_buying_amount += buying_amount
 
                     current_profit = selling_value-buying_amount
-                    
+
                     if current_profit >= buying_record.profit_target:
                         recommendation += f"Sell (+${round(current_profit,2)} of ${buying_amount}),\n"
 
@@ -88,10 +90,10 @@ def track_eth_prices():
                     total_target += buying_record.profit_target
 
                 if total_profit >= total_target:
-                    recommendation += f"Sell (+${round(total_profit,2)} of all),\n"
+                    recommendation += f"Sell (+${round(total_profit,2)} of {total_buying_amount}),\n"
                 else:
-                    recommendation += f"Hold (${round(total_profit,2)}),\n"
-                    
+                    recommendation += f"Hold (${round(total_profit,2)} of {total_buying_amount}),\n"
+
                 if tracker_config.send_selling_alert and 'Sell' in recommendation:
                     send_email_if_not_recent(
                         tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price)
@@ -110,9 +112,9 @@ def track_eth_prices():
                     recommendation += f"Buy (All-Time Low ${current_buying_price}),\n"
                     if tracker_config.send_buying_alert:
                         send_email_if_not_recent(
-                            tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price
+                            tracker_config, recommendation.strip(
+                                '\n,'), current_buying_price, current_selling_price
                         )
-
 
                 # Save data to the database
                 ETHPrice.objects.create(
