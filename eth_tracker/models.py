@@ -45,8 +45,7 @@ class ETHPrice(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     buying_price = models.FloatField()
     selling_price = models.FloatField()
-    recommendation = models.CharField(
-        max_length=50, null=True, blank=True)  # "Buy", "Sell", or "Hold"
+    recommendation = models.TextField(null=True, blank=True)  # "Buy", "Sell", or "Hold"
 
     def __str__(self):
         return f"ETH Price at {self.timestamp}: Buy={self.buying_price}, Sell={self.selling_price}"

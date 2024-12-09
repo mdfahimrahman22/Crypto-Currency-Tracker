@@ -50,10 +50,6 @@ def track_btc_prices():
             continue
 
         btc_buying_records = BTCBuyingRecord.objects.filter(sold=False)
-        if not len(btc_buying_records):
-            print("No BTC buying records found! Please add one in the admin panel.")
-            sleep(60)  # Wait and retry
-            continue
 
         quote_data = request_data('https://api.shakepay.com/quote')
 
@@ -89,14 +85,12 @@ def track_btc_prices():
                     total_profit += current_profit
                     total_target += buying_record.profit_target
 
-                if total_profit >= total_target:
-                    
+                if total_profit >= total_target and total_profit != 0:
                     if f"Sell (+${round(total_profit,2)} of ${total_buying_amount})," not in recommendation:
                         recommendation += f"Sell (+${round(total_profit,2)} of ${total_buying_amount}),\n"
-                    
-                else:
+                elif total_profit != 0:
                     recommendation += f"Hold (${round(total_profit,2)} of {total_buying_amount}),\n"
-                
+
                 if tracker_config.send_selling_alert and 'Sell' in recommendation:
                     send_email_if_not_recent(
                         tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price)
@@ -142,7 +136,7 @@ def send_email_if_not_recent(tracker_config, recommendation, buying_price, selli
 
     if tracker_config.last_email_time is None or (now_time - tracker_config.last_email_time > timedelta(minutes=tracker_config.alert_delay)):
         print('Sending email...')
-        recommendation = recommendation.replace('\n','')
+        recommendation = recommendation.replace('\n', '')
         # Update the last email sent time
         subject = f"BTC Recommendation: {recommendation}"
         message = (

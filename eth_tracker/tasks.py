@@ -49,11 +49,7 @@ def track_eth_prices():
             sleep(60)  # Wait and retry
             continue
 
-        btc_buying_records = ETHBuyingRecord.objects.filter(sold=False)
-        if not len(btc_buying_records):
-            print("No ETH buying records found! Please add one in the admin panel.")
-            sleep(60)  # Wait and retry
-            continue
+        eth_buying_records = ETHBuyingRecord.objects.filter(sold=False)
 
         quote_data = request_data('https://api.shakepay.com/quote')
 
@@ -74,7 +70,7 @@ def track_eth_prices():
                 total_profit = 0
                 total_target = 0
                 total_buying_amount = 0
-                for buying_record in btc_buying_records:
+                for buying_record in eth_buying_records:
                     buying_amount = buying_record.buying_amount
                     buying_rate = buying_record.buying_rate
                     selling_value = (buying_amount/buying_rate) * \
@@ -89,12 +85,12 @@ def track_eth_prices():
                     total_profit += current_profit
                     total_target += buying_record.profit_target
 
-                if total_profit >= total_target:
+                if total_profit >= total_target and total_profit != 0:
                     if f"Sell (+${round(total_profit,2)} of ${total_buying_amount})," not in recommendation:
                         recommendation += f"Sell (+${round(total_profit,2)} of ${total_buying_amount}),\n"
-                else:
+                elif total_profit != 0:
                     recommendation += f"Hold (${round(total_profit,2)} of ${total_buying_amount}),\n"
-                
+
                 if tracker_config.send_selling_alert and 'Sell' in recommendation:
                     send_email_if_not_recent(
                         tracker_config, recommendation.strip('\n,'), current_buying_price, current_selling_price)
@@ -140,7 +136,7 @@ def send_email_if_not_recent(tracker_config, recommendation, buying_price, selli
 
     if tracker_config.last_email_time is None or (now_time - tracker_config.last_email_time > timedelta(minutes=tracker_config.alert_delay)):
         print('Sending email...')
-        recommendation = recommendation.replace('\n','')
+        recommendation = recommendation.replace('\n', '')
         # Update the last email sent time
         subject = f"ETH Recommendation: {recommendation}"
         message = (
